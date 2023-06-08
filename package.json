@@ -12,5 +12,9 @@
     "empresas"
   ],
   "author": "Oscar Rodrigues",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "nodemon": "^2.0.22",
+    "sqlite3": "^5.1.6"
+  }
 }
