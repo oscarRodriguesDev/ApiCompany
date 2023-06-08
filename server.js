@@ -78,6 +78,7 @@ const server = http.createServer((req, res) => {
 const port = 3000;
 const hostname = 'localhost';
 const defaultRoute = '/api/novaEmpresa'; // Rota inicial desejada
+console.log('atualizando automaticamente o servidor') 
 
 server.listen(port, hostname, () => {
   console.log(`Servidor ouvindo em http://${hostname}:${port}`);
