@@ -1,0 +1,15 @@
+{
+  "name": "apicompany",
+  "version": "1.0.0",
+  "description": "api para alteração de dados empresariais",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Areas",
+    "empresas"
+  ],
+  "author": "Oscar Rodrigues",
+  "license": "MIT"
+}
