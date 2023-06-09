@@ -59,7 +59,52 @@ function consultar(termo, tabela, valores, callback) {
     });
   }
   
+//função para criar uma nova empresa, obrigatoriamente com pelo menos uma area
+function pushEnterprise(nomeEmpresa,descEmpresa,nomeArea,descArea) {
+  // Conexão com o banco de dados SQLite
+  var id=0;
+  const db = new sqlite.Database('sqlite-sql/Companies.db');
+  const query1 = `INSERT INTO empresa (nomeEmpresa, descricaoEmpresa) VALUES (?, ?)`
+  
+  //adcionando a empresa no banco
+  db.run(query1, [nomeEmpresa, descEmpresa], function(err) {
+    if (err) {
+      console.error(err.message);
+      return;
+    }
+  });
 
+  // Executa a consulta para obter o ID da empresa
+  const query2 = `SELECT idEmpresa FROM empresa WHERE nomeEmpresa = ?`;
+  db.get(query2, [nomeEmpresa], (err, row) => {
+    if (err) {
+      console.error(err.message);
+      db.close();
+      return;
+    }
+
+    // Fecha a conexão com o banco de dados
+    
+    if (row) {
+      const id = row.idEmpresa;
+      const query3 = `INSERT INTO areas (nomeArea, descricaoArea, idEmpresa) VALUES (?, ?, ?)`;
+      const params3 = [nomeArea, descArea, id];
+    
+      db.run(query3, params3, function(err) {
+        if (err) {
+          console.error(err.message);
+          return;
+        }
+        console.log(`Nova área adicionada com o ID: ${this.lastID}`);
+      });
+    }
+    else {
+      // Caso a empresa não seja encontrada
+      console.error(`A empresa ${nomeEmpresa} não foi encontrada.`);
+    }
+  });
+  db.close();
+}
 
 
 
@@ -139,9 +184,19 @@ const server = http.createServer((req, res) => {
     }
 
     //caso a solicitação seja para criar uma nova empresa
-    else if (url === '/api/novaEmpresa' && method === 'GET') {
-        //...
-      //
+    else if (url.includes('/api/novaEmpresa') && req.method === 'GET') {
+      console.log('rota encontrada com sucesso!')
+      const myURL = new URL(`http://${req.headers.host}${req.url}`);
+      const queryParams = myURL.searchParams;
+      const nomeEmpresa = queryParams.get('nomeEmpresa'); 
+      const descEmpresa = queryParams.get('descEmpresa');
+      const nomeArea = queryParams.get('nomeArea');
+      const descArea = queryParams.get('descArea');
+      console.log('Dados capturados:', nomeEmpresa, descEmpresa, nomeArea, descArea)
+      //efetivamente criar a empresa
+      pushEnterprise(nomeEmpresa,descEmpresa,nomeArea,descArea)
+      
+       
 
     }
 
