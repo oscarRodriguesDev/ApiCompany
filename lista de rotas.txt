@@ -1,9 +1,0 @@
-Lista de rotas:
-listEmpresas
-listAreas
-areaPorEmpresa
-updateEmpresas
-updateAreas
-novaEmpresa
-novaArea
-//http://seusite.com/api/empresas?nomeEmpresa=NomeDaEmpresa
