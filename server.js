@@ -14,10 +14,10 @@ function listarEmpresas(callback) {
       return;
     }
 
-    const empresas = {};
-    rows.forEach((row) => {
-      empresas[row.nomeEmpresa] = row.descricaoEmpresa;
-    });
+    const empresas = rows.map((row) => ({
+      nomeEmpresa: row.nomeEmpresa,
+      descricaoEmpresa: row.descricaoEmpresa,
+    }));
 
     callback(null, empresas);
 
@@ -305,27 +305,27 @@ function updateEmpresa(nomeEmpresa, novaDescricao) {
 const server = http.createServer((req, res) => {
   const { url, method } = req;
 
+
   /**Essa rota lista todas as empresas e suas descrições do banco de dados */
   if (url === '/api/listEmpresas' && method === 'GET') {
-    const empresas = {};
     listarEmpresas((err, empresas) => {
       if (err) {
         console.error(err);
+        res.statusCode = 500;
+        res.end(JSON.stringify({ error: 'Internal Server Error' }));
         return;
       }
-    
-      console.log(empresas);
-    
+  
       // Faça o que quiser com o objeto `empresas` aqui
-      
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify(empresas));
-      console.log(empresas)
-      //falta apenas recuperar os dados na pagina tambem
     });
-   
   }
+  
 
 
 
