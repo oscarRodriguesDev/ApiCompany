@@ -36,28 +36,28 @@ function consultar(termo, tabela, valores, callback) {
   //consulta para usar duas tabelas
   function consulta_complex(empresa, valores, callback) {
     const db = new sqlite.Database('sqlite-sql/Companies.db');
-    var query = `SELECT empresa.nomeEmpresa, areas.nomeArea
-                 FROM empresa
-                 INNER JOIN areas ON empresa.idEmpresa = areas.idEmpresa
-                 WHERE empresa.nomeEmpresa = ?`;
+    const query = `SELECT empresa.nomeEmpresa, areas.nomeArea
+                   FROM empresa
+                   INNER JOIN areas ON empresa.idEmpresa = areas.idEmpresa
+                   WHERE empresa.nomeEmpresa = ?`;
   
-    db.all(query, [empresa], (err, rows) => {
+    db.get(query, [empresa], (err, row) => {
       if (err) {
         console.error(err);
         callback(err);
+        db.close();
         return;
       }
   
-      rows.forEach((row, index) => {
-        const valorColuna = row['nomeArea'];
-        valores[index + 1] = valorColuna;
-      });
+      valores.nomeEmpresa = row.nomeEmpresa;
+      valores.nomeArea = row.nomeArea;
   
       db.close();
   
       callback(null);
     });
   }
+
   
 //função para criar uma nova empresa, obrigatoriamente com pelo menos uma area
 function pushEnterprise(nomeEmpresa,descEmpresa,nomeArea,descArea) {
@@ -82,9 +82,6 @@ function pushEnterprise(nomeEmpresa,descEmpresa,nomeArea,descArea) {
       db.close();
       return;
     }
-
-    // Fecha a conexão com o banco de dados
-    
     if (row) {
       const id = row.idEmpresa;
       const query3 = `INSERT INTO areas (nomeArea, descricaoArea, idEmpresa) VALUES (?, ?, ?)`;
@@ -157,14 +154,21 @@ const server = http.createServer((req, res) => {
       const myURL = new URL(`http://${req.headers.host}${req.url}`);
       const queryParams = myURL.searchParams;
       const nomeEmpresa = queryParams.get('nomeEmpresa');
-
       console.log('Dados capturados:', nomeEmpresa);
-      var valores = {}
       const url = `http://${req.headers.host}${req.url}`;
       console.log('URL completa:', url);
-
-      consulta_complex(nomeEmpresa, valores, function () {
+      var valores = {};
+      consulta_complex(nomeEmpresa,valores, function () {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+       // res.end(JSON.stringify(valores));
+        res.end(JSON.stringify({'nomeEmpresa': valores['nomeEmpresa'],'nomeArea':valores['nomeArea']} ));
         console.log(valores)
+       
+        
       })
     }
 
