@@ -29,8 +29,7 @@ function listarEmpresas(callback) {
 //função para listar as areas e suas respectivas descrições
 function listarAreas(callback) {
   const db = new sqlite.Database('./sqlite-sql/Companies.db');
-
-  const selectQuery = 'SELECT nomeArea, descricaoArea FROM areas';
+  const selectQuery ='SELECT e.nomeEmpresa, a.nomeArea, a.descricaoArea FROM empresa AS e JOIN areas AS a ON a.idEmpresa = e.idEmpresa';
 
   db.all(selectQuery, (err, rows) => {
     if (err) {
@@ -39,17 +38,25 @@ function listarAreas(callback) {
       return;
     }
 
-    const areas = {};
+    const empresas = {};
+
     rows.forEach((row) => {
-      areas[row.nomeArea] = row.descricaoArea;
+      const nomeEmpresa = row.nomeEmpresa;
+      const nomeArea = row.nomeArea;
+      const descricaoArea = row.descricaoArea;
+
+      if (!empresas[nomeEmpresa]) {
+        empresas[nomeEmpresa] = {};
+      }
+
+      empresas[nomeEmpresa][nomeArea] = descricaoArea;
     });
 
-    callback(null, areas);
+    callback(null, empresas);
 
     db.close();
   });
 }
-
 
 
 //função para listar todas as empresas por area
@@ -331,19 +338,21 @@ const server = http.createServer((req, res) => {
 
   /**Essa rota lista todas as areas contidas no Banco de dados */
   else if (url === '/api/listAreas' && method === 'GET') {
-    const areas = {};
-    listarAreas((err, areas) => {
+    const areaEmpresas = {}
+    listarAreas((err, areaEmpresas) => {
       if (err) {
         console.error(err);
         return;
       }
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify(areas));
-      console.log(areas);  
+      res.end(JSON.stringify(areaEmpresas));
+      console.log(areaEmpresas);
+   
     });
-    
-    
   }
 
 
@@ -416,6 +425,7 @@ const server = http.createServer((req, res) => {
 
   /** essa rota permite criação de empresas */
   else if (url.includes('/api/novaEmpresa') && req.method === 'GET') {
+    //urlExample: /api/novaEmpresa/?nomeEmpresa=nome&descEmpresa=desc&nomeArea=area&descArea=descrição
     const myURL = new URL(`http://${req.headers.host}${req.url}`);
     const queryParams = myURL.searchParams;
     const nomeEmpresa = queryParams.get('nomeEmpresa');
