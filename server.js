@@ -1,40 +1,60 @@
 const http = require('http');
 const sqlite = require('sqlite3').verbose();
 
-/**Função para listar as empresas e suas descrições */
-function listarEmpresas(callback) {
+/**
+ * Função listarEmpresas
+ * 
+ * Esta função consulta o banco de dados SQLite e retorna uma lista de empresas com seus nomes e descrições.
+ * 
+ * @param {Function} callAction - Função de retorno que será chamada após a consulta ser concluída.
+ *    O primeiro parâmetro da função de retorno é um objeto de erro, caso ocorra algum erro durante 
+ * a consulta.
+ *    O segundo parâmetro é um array de objetos contendo as informações das empresas.
+ *        Cada objeto tem as propriedades 'nomeEmpresa' e 'descricaoEmpresa'.
+ * 
+ * @returns {void}
+ * @author Oscar Rodrigues
+ */
+function listarEmpresas(callAction) {
   const db = new sqlite.Database('./sqlite-sql/Companies.db');
-
   const selectQuery = 'SELECT nomeEmpresa, descricaoEmpresa FROM empresa';
-
   db.all(selectQuery, (err, rows) => {
     if (err) {
       console.error(err);
-      callback(err, null);
+      callAction(err, null);
       return;
     }
-
     const empresas = rows.map((row) => ({
       nomeEmpresa: row.nomeEmpresa,
       descricaoEmpresa: row.descricaoEmpresa,
     }));
-
-    callback(null, empresas);
-
+    callAction(null, empresas);
     db.close();
   });
 }
 
 
-//função para listar as areas e suas respectivas descrições
-function listarAreas(callback) {
+/**
+ * Função listarAreas
+ * Esta função consulta o banco de dados SQLite e retorna uma lista de empresas com suas respectivas áreas 
+ * e descrições.
+ * @param {Function} callAction - Função de retorno que será chamada após a consulta ser concluída.
+ * O primeiro parâmetro da função de retorno é um objeto de erro, caso ocorra algum erro durante a 
+ * consulta.
+ * O segundo parâmetro é um objeto contendo as informações das empresas e suas áreas.   
+ * Cada chave do objeto é o nome da empresa, e o valor correspondente é um objeto com as áreas e 
+ * descrições relacionadas.
+ * @returns {void}
+ * @author Oscar Rodrigues
+ */
+function listarAreas(callAction) {
   const db = new sqlite.Database('./sqlite-sql/Companies.db');
   const selectQuery ='SELECT e.nomeEmpresa, a.nomeArea, a.descricaoArea FROM empresa AS e JOIN areas AS a ON a.idEmpresa = e.idEmpresa';
 
   db.all(selectQuery, (err, rows) => {
     if (err) {
       console.error(err);
-      callback(err, null);
+      callAction(err, null);
       return;
     }
 
@@ -52,15 +72,24 @@ function listarAreas(callback) {
       empresas[nomeEmpresa][nomeArea] = descricaoArea;
     });
 
-    callback(null, empresas);
+    callAction(null, empresas);
 
     db.close();
   });
 }
 
 
-//função para listar todas as empresas por area
-function listarEmpresasPorAreas(callback) {
+/**
+ * Função listarEmpresasPorAreas
+ * Esta função consulta o banco de dados SQLite e retorna uma lista de empresas com as áreas correspondentes.
+ * @param {Function} callAction - Função de retorno que será chamada após a consulta ser concluída.
+ *O primeiro parâmetro da função de retorno é um objeto de erro, caso ocorra algum erro durante a consulta.
+ *O segundo parâmetro é um objeto contendo as informações das empresas e suas áreas.
+ * Cada chave do objeto é o nome da empresa, e o valor correspondente é um array com as áreas relacionadas.
+ * @returns {void}
+ * @author Oscar Rodrigues
+ */
+function listarEmpresasPorAreas(callAction) {
   const db = new sqlite.Database('./sqlite-sql/Companies.db');
 
   const selectQuery = `
@@ -73,7 +102,7 @@ function listarEmpresasPorAreas(callback) {
   db.all(selectQuery, (err, rows) => {
     if (err) {
       console.error(err);
-      callback(err, null);
+      callAction(err, null);
       return;
     }
 
@@ -86,7 +115,7 @@ function listarEmpresasPorAreas(callback) {
       empresasPorAreas[nomeEmpresa].push(nomeArea);
     });
 
-    callback(null, empresasPorAreas);
+    callAction(null, empresasPorAreas);
 
     db.close();
   });
@@ -94,8 +123,19 @@ function listarEmpresasPorAreas(callback) {
 
 
 
-//consulta para usar duas tabelas
-function consulta_complex(empresa, valores, callback) {
+/**
+ * Função consulta_complex.
+ * Esta função realiza uma consulta complexa no banco de dados SQLite, buscando informações específicas 
+ * de uma empresa e suas áreas correspondentes.
+ * @param {string} empresa - O nome da empresa a ser consultada.
+ * @param {object} valores - Um objeto que armazenará os valores retornados pela consulta.
+ * O objeto deve conter as propriedades 'nomeEmpresa' e 'nomeArea'.
+ * @param {Function} callAction - Função de retorno que será chamada após a consulta ser concluída.
+ * O primeiro parâmetro da função de retorno é um objeto de erro, caso ocorra algum erro durante a consulta.
+ * @returns {void}
+ * @author Oscar Rodrigues
+ */
+function consulta_complex(empresa, valores, callAction) {
   const db = new sqlite.Database('sqlite-sql/Companies.db');
   const query = `SELECT empresa.nomeEmpresa, areas.nomeArea
                    FROM empresa
@@ -105,7 +145,7 @@ function consulta_complex(empresa, valores, callback) {
   db.get(query, [empresa], (err, row) => {
     if (err) {
       console.error(err);
-      callback(err);
+      callAction(err);
       db.close();
       return;
     }
@@ -115,12 +155,24 @@ function consulta_complex(empresa, valores, callback) {
 
     db.close();
 
-    callback(null);
+    callAction(null);
   });
 }
 
 
-//função para criar uma nova empresa, obrigatoriamente com pelo menos uma area
+/**
+ * Função pushEnterprise
+ *
+ * Esta função insere uma nova empresa no banco de dados SQLite.
+ *
+ * @param {string} nomeEmpresa - O nome da empresa a ser inserida.
+ * @param {string} descEmpresa - A descrição da empresa a ser inserida.
+ * @param {string} nomeArea - O nome da área relacionada à empresa.
+ * @param {string} descArea - A descrição da área relacionada à empresa.
+ *
+ * @returns {void}
+ * @author Oscar Rodrigues
+ */
 function pushEnterprise(nomeEmpresa, descEmpresa, nomeArea, descArea) {
   // Conexão com o banco de dados SQLite
   var id = 0;
@@ -165,7 +217,13 @@ function pushEnterprise(nomeEmpresa, descEmpresa, nomeArea, descArea) {
 }
 
 
-//função para deletar empresas  completas
+/**
+ * Função deleteCompany
+ * Esta função deleta uma empresa e suas áreas relacionadas do banco de dados SQLite.
+ * @param {string} nomeEmpresa - O nome da empresa a ser deletada.
+ * @returns {void}
+ * @author Oscar Rodrigues
+ */
 function deleteCompany(nomeEmpresa) {
   const db = new sqlite.Database('sqlite-sql/Companies.db');
   // Deleta as áreas relacionadas à empresa
@@ -187,8 +245,18 @@ function deleteCompany(nomeEmpresa) {
   db.close();
 }
 
-
-//função para adcionar areas 
+/**
+ * Função inserirArea
+ *
+ * Esta função insere uma nova área relacionada a uma empresa no banco de dados SQLite.
+ *
+ * @param {string} nomeEmpresa - O nome da empresa à qual a área será relacionada.
+ * @param {string} nomeArea - O nome da área a ser inserida.
+ * @param {string} descricaoArea - A descrição da área a ser inserida.
+ *
+ * @returns {void}
+ * @author Oscar Rodrigues
+ */
 function inserirArea(nomeEmpresa, nomeArea, descricaoArea) {
   const db = new sqlite.Database('sqlite-sql/Companies.db');
   const query = 'SELECT idEmpresa FROM empresa WHERE nomeEmpresa = ?';
@@ -215,7 +283,17 @@ function inserirArea(nomeEmpresa, nomeArea, descricaoArea) {
 }
 
 
-/**Função para deletar area de determinada empresa */
+/**
+ * Função deleteArea
+ *
+ * Esta função deleta uma área relacionada a uma empresa do banco de dados SQLite.
+ *
+ * @param {string} nomeEmpresa - O nome da empresa à qual a área está relacionada.
+ * @param {string} nomeArea - O nome da área a ser deletada.
+ *
+ * @returns {void}
+ * @author Oscar Rodrigues
+ */
 function deleteArea(nomeEmpresa, nomeArea) {
   const db = new sqlite.Database('./sqlite-sql/Companies.db');
   const queryEmpresa = 'SELECT idEmpresa FROM empresa WHERE nomeEmpresa = ?';
@@ -243,7 +321,17 @@ function deleteArea(nomeEmpresa, nomeArea) {
 }
 
 
-/**Função para alterar descrição da area de uma empresa */
+/**
+ * Função updateArea
+ *
+ * Esta função atualiza a descrição de uma área relacionada a uma empresa no banco de dados SQLite. 
+ * Se a área não existir, uma nova área é criada.
+ * @param {string} nomeEmpresa - O nome da empresa à qual a área está relacionada.
+ * @param {string} nomeArea - O nome da área a ser atualizada ou criada.
+ * @param {string} novaDescricaoArea - A nova descrição da área.
+ * @returns {void}
+ * @author Oscar Rodrigues
+ */
 function updateArea(nomeEmpresa, nomeArea, novaDescricaoArea) {
   const db = new sqlite.Database('./sqlite-sql/Companies.db');
   const queryEmpresa = 'SELECT idEmpresa FROM empresa WHERE nomeEmpresa = ?';
@@ -289,7 +377,17 @@ function updateArea(nomeEmpresa, nomeArea, novaDescricaoArea) {
 
 
 
-/**Função para alterar area da empresa informada*/
+/**
+ * Função updateEmpresa
+ *
+ * Esta função atualiza a descrição de uma empresa no banco de dados SQLite.
+ *
+ * @param {string} nomeEmpresa - O nome da empresa a ser atualizada.
+ * @param {string} novaDescricao - A nova descrição da empresa.
+ *
+ * @returns {void}
+ * @author Oscar Rodrigues
+ */
 function updateEmpresa(nomeEmpresa, novaDescricao) {
   const db = new sqlite.Database('./sqlite-sql/Companies.db');
   const query = 'UPDATE empresa SET descricaoEmpresa = ? WHERE nomeEmpresa = ?';
@@ -313,7 +411,11 @@ const server = http.createServer((req, res) => {
   const { url, method } = req;
 
 
-  /**Essa rota lista todas as empresas e suas descrições do banco de dados */
+  /** 
+ * Verifica se a rota é '/api/listEmpresas' e o método é 'GET'.
+ * Chama a função "listarEmpresas" e envia uma resposta à requisição recebida
+ *  e trata possíveis erros.
+ */
   if (url === '/api/listEmpresas' && method === 'GET') {
     listarEmpresas((err, empresas) => {
       if (err) {
@@ -336,7 +438,11 @@ const server = http.createServer((req, res) => {
 
 
 
-  /**Essa rota lista todas as areas contidas no Banco de dados */
+/** 
+ * Verifica se a rota é '/api/listAreas' e o método é 'GET'.
+ * Chama a função "listarAreas" e envia uma resposta à requisição recebida
+ *  e trata possíveis erros.
+ */ 
   else if (url === '/api/listAreas' && method === 'GET') {
     const areaEmpresas = {}
     listarAreas((err, areaEmpresas) => {
@@ -356,7 +462,11 @@ const server = http.createServer((req, res) => {
   }
 
 
-  /**Essa rota recupera todas as areas por empresa */
+  /** 
+ * Verifica se a rota é '/api/areasGeral' e o método é 'GET'.
+ * Chama a função "listarEmpresasPorAreas" e envia uma resposta à requisição recebida
+ *  e trata possíveis erros.
+ */ 
   else if (url === '/api/areasGeral' && method === 'GET') {
     var areasPorEmpresa={}
     listarEmpresasPorAreas((err, areasPorEmpresa) => {
@@ -373,7 +483,11 @@ const server = http.createServer((req, res) => {
   }
 
   
-  /**Essa rota permite visualizar as areas da empresa selecionada */
+/** 
+ * Verifica se a rota é '/api/areaPorEmpresa' e o método é 'GET'.
+ * Chama a função "consulta_complex" e envia uma resposta à requisição recebida
+ *  e trata possíveis erros.
+ */ 
   else if (url.includes('/api/areaPorEmpresa') && req.method === 'GET') {
     const myURL = new URL(`http://${req.headers.host}${req.url}`);
     const queryParams = myURL.searchParams;
@@ -390,15 +504,18 @@ const server = http.createServer((req, res) => {
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify({ 'nomeEmpresa': valores['nomeEmpresa'], 'nomeArea': valores['nomeArea'] }));
       console.log(valores)
-      // ao  invés de mostrar os dados em aberto num paragrafo desejo mostrar os dados numa tabela
     })
   }
 
 
 
-  /**Função para alterar a descrição de uma empresa */
+  /** 
+ * Verifica se a rota é '/api/updateEmpresa' e o método é 'GET'.
+ * Chama a função "updateEmpresa" e altera a descrição da empresa informada pela requisição,
+ * caso a empresa não exista, ela NÃO será criada automaticamente, e nada será feito no banco de dados
+ * urlExample:/api/updateEmpresas/?nomeEmpresa=nome&descricao=novadescricao
+ */ 
   else if (url.includes('/api/updateEmpresa') && req.method === 'GET') {
-    //urlExample:/api/updateEmpresas/?nomeEmpresa=nome&descricao=novadescricao
     const myURL = new URL(`http://${req.headers.host}${req.url}`);
     const queryParams = myURL.searchParams;
     const nomeEmpresa = queryParams.get('nomeEmpresa');
@@ -409,9 +526,13 @@ const server = http.createServer((req, res) => {
 
 
 
-  /**Rota para atualizar areas da empresa informada */
+  /** 
+ * Verifica se a rota é '/api/updateArea' e o método é 'GET'.
+ * Chama a função "updateArea" e realiza a alteração na area da empresas informada pela requisição,
+ * caso a area informada não exista no banco de dados, a area é automaticamente criada
+ * urlExample: /api/updateAreas/?nomeEmpresa=empresa&nomeArea=area&novaDesc=nova descriação a ser adcionada
+ */ 
   else if (url.includes('/api/updateArea') && req.method === 'GET') {
-    //urlExample: /api/updateAreas/?nomeEmpresa=empresa&nomeArea=area&novaDesc=nova descriação a ser adcionada
     const myURL = new URL(`http://${req.headers.host}${req.url}`);
     const queryParams = myURL.searchParams;
     const nomeEmpresa = queryParams.get('nomeEmpresa');
@@ -423,9 +544,14 @@ const server = http.createServer((req, res) => {
 
 
 
-  /** essa rota permite criação de empresas */
+  /** 
+ * Verifica se a rota é '/api/novaEmpresa' e o método é 'GET'.
+ * Chama a função "pushEnterprise" e adciona uma nova empresa no banco de dados com as especificações recebidas
+ * pela requisição, se observar essa condicional, vai perceber que obrigatoriamente, quando for inserir
+ * uma nova empresa no banco, deve-se tambem criar pelo menos uma area para essa empresa
+ * urlExample:/api/novaEmpresa/?nomeEmpresa=nome&descEmpresa=desc&nomeArea=area&descArea=descrição
+ */ 
   else if (url.includes('/api/novaEmpresa') && req.method === 'GET') {
-    //urlExample: /api/novaEmpresa/?nomeEmpresa=nome&descEmpresa=desc&nomeArea=area&descArea=descrição
     const myURL = new URL(`http://${req.headers.host}${req.url}`);
     const queryParams = myURL.searchParams;
     const nomeEmpresa = queryParams.get('nomeEmpresa');
@@ -433,18 +559,17 @@ const server = http.createServer((req, res) => {
     const nomeArea = queryParams.get('nomeArea');
     const descArea = queryParams.get('descArea');
     console.log('Dados capturados:', nomeEmpresa, descEmpresa, nomeArea, descArea)
-    //efetivamente criar a empresa
     pushEnterprise(nomeEmpresa, descEmpresa, nomeArea, descArea)
-
-
-
   }
 
 
 
-  /**rota para incluir novas areas nas empresas */
+  /** 
+ * Verifica se a rota é '/api/novaArea' e o método é 'GET'.
+ * Chama a função "inserirArea" e adciona uma nova area na empresa informada
+ * url:example = /api/novaArea/?nomeEmpresa=Empresa2&nomeArea=RH&descArea=Recursos Humanos
+ */
   else if (url.includes('/api/novaArea') && req.method === 'GET') {
-    //url:example = /api/novaArea/?nomeEmpresa=Empresa2&nomeArea=RH&descArea=Recursos Humanos
     const myURL = new URL(`http://${req.headers.host}${req.url}`);
     const queryParams = myURL.searchParams;
     const nomeEmpresa = queryParams.get('nomeEmpresa');
@@ -456,8 +581,11 @@ const server = http.createServer((req, res) => {
   }
 
 
-
-  /**rota para deletar empresas */
+  /** 
+ * Verifica se a rota é '/api/deleteCompany' e o método é 'GET'.
+ * Chama a função "deleteCompany" e deleta a empresa informada na requisição
+ * urlExample:/api/deleteCompany/?nomeEmpresa=nome-da-empresa
+ */
   else if (url.includes('/api/deleteCompany') && req.method === 'GET') {
     const myURL = new URL(`http://${req.headers.host}${req.url}`);
     const queryParams = myURL.searchParams;
@@ -467,7 +595,11 @@ const server = http.createServer((req, res) => {
 
 
 
-  /**Rota para deletar uma determinada area de uma empresa */
+  /** 
+ * Verifica se a rota é '/api/deleteArea' e o método é 'GET'.
+ * Chama a função "deleteArea" deletando o registro de area no banco de dados
+ * urlExample: /api/deleteArea/?nome=Empresa2&nomeArea=TI
+ */ 
   else if (url.includes('/api/deleteArea') && req.method === 'GET') {
     //urlExample: /api/deleteArea/?nome=Empresa2&nomeArea=TI
     const myURL = new URL(`http://${req.headers.host}${req.url}`);
@@ -489,7 +621,7 @@ const server = http.createServer((req, res) => {
 
 
 /**Definições de porta onde servidor irá rodar e a rota inicial a ser acessada */
-const port = 3000;
+const port = 8080;
 const hostname = 'localhost';
 const defaultRoute = '/api/listEmpresas';
 console.log('atualizando automaticamente o servidor')
